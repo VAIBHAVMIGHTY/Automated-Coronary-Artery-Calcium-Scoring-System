@@ -1,0 +1,49 @@
+# Coronary Artery Calcium (CAC) Scoring Configuration
+
+data:
+  raw_dir: data/raw
+  processed_dir: data/processed
+  synthetic_dir: data/synthetic
+
+preprocessing:
+  hu_window: [-200, 800]
+  target_spacing: [1.0, 1.0, 3.0]  # mm (x, y, z) — standard CAC slice thickness
+  patch_size: [128, 128, 32]
+  hu_threshold: 130  # Standard Agatston calcium threshold
+
+agatston:
+  min_lesion_area_mm2: 1.0
+  density_weights:
+    - [130, 200, 1]
+    - [200, 300, 2]
+    - [300, 400, 3]
+    - [400, 9999, 4]
+
+model:
+  in_channels: 1
+  out_channels: 2  # background + calcium
+  spatial_dims: 3
+  channels: [8, 16, 32, 64]
+  strides: [2, 2, 2]
+
+training:
+  batch_size: 2
+  num_epochs: 50
+  learning_rate: 0.0001
+  val_split: 0.2
+  num_workers: 0
+  checkpoint_dir: outputs/checkpoints
+  log_dir: outputs/logs
+
+inference:
+  checkpoint: outputs/checkpoints/best_model.pt
+  output_dir: outputs/predictions
+  overlay_alpha: 0.45
+
+risk_categories:
+  # Agatston score → cardiovascular risk (MESA cohort guidelines)
+  none: [0, 0]
+  minimal: [1, 10]
+  mild: [11, 100]
+  moderate: [101, 400]
+  severe: [401, 999999]
